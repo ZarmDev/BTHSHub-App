@@ -1,0 +1,7 @@
+- Add friends/chat and notify if you get a request
+- Add host event button somewhere/create group chat
+- If multiple parks found combine as a square?
+- Add streak and way to check off each park if you visited it (and then add that to the daily log)
+- Add modal/area that has recommendations/suggestions (possibly using AI) on the bottom of find places
+- In events.tsx, when searching locations add emojis based on type of attraction
+- Add username/passwords
