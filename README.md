@@ -1,4 +1,5 @@
 # BTHSHub-App
+Copyright (c) 2025 ZarmDev. All rights reserved.
 1. Run ```bun install```
 2. Add your Google Maps API key in a .env file
 3. Add the first IP address that appears when running ```ipconfig``` (your localhost IP address)
