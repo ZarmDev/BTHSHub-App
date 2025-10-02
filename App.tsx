@@ -9,15 +9,18 @@ import { BottomNavigation, PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { CombinedDarkTheme, CombinedDefaultTheme } from './constants/colors';
+import { ModalProvider } from './providers/ModalProvider';
 import Calendar from './routes/calendar';
 import Club from './routes/club';
 import Discuss from './routes/discuss';
 import Home from './routes/home';
+import NHS from './routes/nhs';
 import Schedule from './routes/schedule';
 import Teams from './routes/teams';
 import CreateUser from './screens/createuser';
 import FirstStartup from './screens/firststartup';
 import Login from './screens/login';
+import NotConnected from './screens/notconnected';
 import { doesFileExist, login, readInDocumentDirectory } from './utils/utils';
 
 const defaultTab = 0;
@@ -28,7 +31,8 @@ enum STATE {
   CREATEUSER,
   LOGINSCREEN,
   SIGNUP,
-  HOME
+  HOME,
+  NOTCONNECTED
 }
 
 export default function App() {
@@ -38,12 +42,13 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [routes] = useState([
-    { key: 'home', title: 'Home', focusedIcon: 'map-check', unfocusedIcon: 'map' },
-    { key: 'schedule', title: 'Schedule', focusedIcon: 'map-check', unfocusedIcon: 'map' },
-    { key: 'club', title: 'Clubs', focusedIcon: 'map-check', unfocusedIcon: 'map' },
-    { key: 'teams', title: 'Teams', focusedIcon: 'clock-time-eleven', unfocusedIcon: 'clock-time-eleven-outline' },
-    { key: 'discuss', title: 'Discussion', focusedIcon: 'google-spreadsheet', unfocusedIcon: 'google-spreadsheet' },
-    { key: 'calendar', title: 'Calendar', focusedIcon: 'google-spreadsheet', unfocusedIcon: 'google-spreadsheet' },
+    { key: 'home', title: 'Home', focusedIcon: 'home', unfocusedIcon: 'home-outline' },
+    { key: 'schedule', title: 'Schedule', focusedIcon: 'calendar-edit', unfocusedIcon: 'calendar' },
+    { key: 'club', title: 'Clubs', focusedIcon: 'shape', unfocusedIcon: 'shape-outline' },
+    { key: 'teams', title: 'Teams', focusedIcon: 'arm-flex', unfocusedIcon: 'arm-flex-outline' },
+    { key: 'discuss', title: 'Discussion', focusedIcon: 'chat', unfocusedIcon: 'chat-outline' },
+    { key: 'calendar', title: 'Calendar', focusedIcon: 'calendar-clock', unfocusedIcon: 'calendar-clock-outline' },
+    { key: 'nhs', title: 'NHS', focusedIcon: 'account', unfocusedIcon: 'account-outline' },
   ]);
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? CombinedDarkTheme : CombinedDefaultTheme;
@@ -59,18 +64,21 @@ export default function App() {
   // };
 
   const renderScene = BottomNavigation.SceneMap({
-    home: () => <Home></Home>,
-    schedule: () => <Schedule username={username} password={password} token={token} />,
+    home: () => <Home username={username} token={token}></Home>,
+    schedule: () => <Schedule username={username} token={token} />,
     club: () => <Club></Club>,
-    teams: () => <Teams username={username} password={password} token={token} isActive={index === 3}/>,
+    teams: () => <Teams username={username} token={token} isActive={index === 3} />,
     discuss: () => <Discuss></Discuss>,
     calendar: () => <Calendar></Calendar>,
+    nhs: () => <NHS></NHS>
   });
 
   async function checkFirstStartup() {
     const exists = await doesFileExist(FileSystem.documentDirectory + "firststartup.txt")
     if (exists) {
       getUserInfo();
+    } else {
+      setState(STATE.FIRSTSTARTUP);
     }
   }
 
@@ -80,8 +88,15 @@ export default function App() {
       const split = data.split('\n')
       const username = split[0];
       const password = split[1];
+      const timeoutId = setTimeout(() => {
+        if (state == STATE.NONE) {
+          setState(STATE.NOTCONNECTED)
+        }
+      }, 3000)
       const loginAttempt = await login(username, password);
-      // console.log(loginAttempt.data, loginAttempt.ok);
+      console.log(loginAttempt.data, loginAttempt.ok);
+      clearTimeout(timeoutId);
+
       if (!loginAttempt.ok) {
         setState(STATE.LOGINSCREEN);
         return;
@@ -96,6 +111,7 @@ export default function App() {
   }
 
   useEffect(() => {
+    console.log("running FS")
     checkFirstStartup()
   }, [])
 
@@ -111,13 +127,13 @@ export default function App() {
       }} />;
       break;
     case STATE.CREATEUSER:
-      screenToShow = <CreateUser loginCallback={() => {setState(STATE.LOGINSCREEN)}} finishedCallback={() => {
+      screenToShow = <CreateUser loginCallback={() => { setState(STATE.LOGINSCREEN) }} finishedCallback={() => {
         getUserInfo();
         setState(STATE.HOME);
       }}></CreateUser>
       break;
     case STATE.LOGINSCREEN:
-      screenToShow = <Login createUserCallback={() => {setState(STATE.CREATEUSER)}} finishedCallback={() => {
+      screenToShow = <Login createUserCallback={() => { setState(STATE.CREATEUSER) }} finishedCallback={() => {
         getUserInfo();
         setState(STATE.HOME);
       }}></Login>
@@ -129,24 +145,30 @@ export default function App() {
         renderScene={renderScene}
         style={styles.navigation}
       />
+      break;
+    case STATE.NOTCONNECTED:
+      screenToShow = <NotConnected></NotConnected>
+      break;
   }
 
   return (
     <PaperProvider theme={theme}>
       <SafeAreaProvider>
-        <View
-          style={{
-            flex: 1,
-            width: 390, // iPhone width
-            height: 844, // iPhone height
-            alignSelf: 'center', // center on larger screens
-            borderWidth: 2, // optional: visual border
-            borderColor: '#ccc', // optional: visual border
-            backgroundColor: '#fff', // optional: background
-          }}
-        >
-          {screenToShow}
-        </View>
+        <ModalProvider userData={{username, token}}>
+          <View
+            style={{
+              flex: 1,
+              width: 390, // iPhone width
+              height: 844, // iPhone height
+              alignSelf: 'center', // center on larger screens
+              borderWidth: 2, // optional: visual border
+              borderColor: '#ccc', // optional: visual border
+              backgroundColor: '#fff', // optional: background
+            }}
+          >
+            {screenToShow}
+          </View>
+        </ModalProvider>
       </SafeAreaProvider>
       <StatusBar style="auto" />
     </PaperProvider>

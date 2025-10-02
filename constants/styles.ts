@@ -72,7 +72,7 @@ export const styles = StyleSheet.create({
         margin: height * 0.01
     },
     inlineButton: {
-        padding: width * 0.001,
+        padding: 0.1,
         marginLeft: width * 0.01,
         borderRadius: 20,
     },

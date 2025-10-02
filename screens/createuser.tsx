@@ -17,7 +17,7 @@ export default function CreateUser(props : any) {
                 await writeToDocumentDirectory("userdata", `${username}\n${password}`);
                 props.finishedCallback();
             }
-            setMessage("Unable to create account. Something went wrong.");
+            setMessage(res.data);
         } else {
             setMessage("One field is not filled in. All fields are required.");
         }

@@ -21,7 +21,7 @@ interface ApiConfig {
 }
 
 // Base fetch function with authentication
-async function apiFetch(endpoint: string, options: ApiConfig = {}, token: string = ""): Promise<ApiResponse> {  
+async function apiFetch(endpoint: string, options: ApiConfig = {}, token: string = ""): Promise<ApiResponse> {
   const config: RequestInit = {
     method: 'GET',
     headers: {
@@ -87,14 +87,33 @@ export async function getDailyAnnouncement(token: string = ""): Promise<ApiRespo
   return await apiFetch('/api/getdailyannoucement', {}, token);
 }
 
-export async function uploadSchedule(fileData: FormData, token: string = ""): Promise<ApiResponse> {
-  return await apiFetch('/api/uploadschedule', {
+export async function getSchedule(token: string = ""): Promise<ApiResponse> {
+  return await apiFetch('/api/getschedule', {}, token);
+}
+
+export async function uploadSchedule(file: any, token: string = ""): Promise<ApiResponse> {
+  const formData = new FormData();
+  formData.append('file', {
+    uri: file.uri,
+    name: file.name,
+    type: 'application/pdf',
+  } as any);
+
+  const response = await fetch(`${server}/api/uploadschedule`, {
     method: 'POST',
+    body: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
+      'Content-Type': 'multipart/form-data',
+      'Authorization': token ? `${token}` : ''
     },
-    body: fileData
-  }, token);
+  });
+
+  const text = await response.text();
+  return {
+    ok: response.ok,
+    status: response.status,
+    data: text
+  };
 }
 
 // Protected routes (require JWT + team membership)
@@ -119,8 +138,8 @@ export async function getUserTeams(token: string = ""): Promise<ApiResponse> {
 }
 
 export async function createTeamAnnouncement(
-  teamName: string, 
-  content: string, 
+  teamName: string,
+  content: string,
   mentions: string[] = [],
   token: string = ""
 ): Promise<ApiResponse> {
@@ -184,7 +203,7 @@ export async function setDailyAnnouncement(announcement: string, token: string =
 }
 
 export async function updateOtherUserAdminLevel(
-  targetUsername: string, 
+  targetUsername: string,
   adminLevel: '0' | '1' | '2',
   token: string = ""
 ): Promise<ApiResponse> {
@@ -230,107 +249,107 @@ export function parseTeamInfoResponse(response: ApiResponse): any | null {
 
 // Usage of AI and https://developers.google.com/maps/documentation/places/web-service/place-autocomplete
 export async function fetchNearbyPlaces(latitude: number, longitude: number, textInput: string) {
-    const url = `https://places.googleapis.com/v1/places:autocomplete`;
+  const url = `https://places.googleapis.com/v1/places:autocomplete`;
 
-    const body = {
-        input: textInput,
-        locationBias: {
-            circle: {
-                center: {
-                    latitude,
-                    longitude,
-                },
-                radius: 5000.0, // meters
-            },
+  const body = {
+    input: textInput,
+    locationBias: {
+      circle: {
+        center: {
+          latitude,
+          longitude,
         },
-        // includedPrimaryTypes: ["park"], // optional: bias toward parks
-    };
+        radius: 5000.0, // meters
+      },
+    },
+    // includedPrimaryTypes: ["park"], // optional: bias toward parks
+  };
 
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            // don't show error even if apiKey is null
-            "X-Goog-Api-Key": apiKey!,
-            "X-Goog-FieldMask": "*", // or specify fields like 'places.displayName,places.location'
-        },
-        body: JSON.stringify(body),
-    });
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      // don't show error even if apiKey is null
+      "X-Goog-Api-Key": apiKey!,
+      "X-Goog-FieldMask": "*", // or specify fields like 'places.displayName,places.location'
+    },
+    body: JSON.stringify(body),
+  });
 
-    if (!response.ok) {
-        console.error("Failed to fetch places:", await response.text());
-        return [];
-    }
+  if (!response.ok) {
+    console.error("Failed to fetch places:", await response.text());
+    return [];
+  }
 
-    const data = await response.json();
-    return data;
+  const data = await response.json();
+  return data;
 };
 
 // Usage of AI
 export async function fetchPlaceDetails(placeId: string) {
-    const url = `https://places.googleapis.com/v1/places/${placeId}?fields=location&key=${apiKey}`;
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    });
+  const url = `https://places.googleapis.com/v1/places/${placeId}?fields=location&key=${apiKey}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
-    if (!response.ok) {
-        console.error("Failed to fetch place details:", await response.text());
-        return null;
-    }
+  if (!response.ok) {
+    console.error("Failed to fetch place details:", await response.text());
+    return null;
+  }
 
-    const data = await response.json();
-    return data.location; // { latitude: number, longitude: number }
+  const data = await response.json();
+  return data.location; // { latitude: number, longitude: number }
 };
 
 export const writeToDocumentDirectory = async (fileName: string, content: string) => {
-    const fileUri = FileSystem.documentDirectory + fileName;
-    await FileSystem.writeAsStringAsync(fileUri, content);
-    console.log('File written successfully');
+  const fileUri = FileSystem.documentDirectory + fileName;
+  await FileSystem.writeAsStringAsync(fileUri, content);
+  console.log('File written successfully');
 };
 
-export async function readInDocumentDirectory(fileName: string) : Promise<string | null> {
-    const fileUri = FileSystem.documentDirectory + fileName;
-    try {
-        const content = await FileSystem.readAsStringAsync(fileUri);
-        // console.log('File content:', content);
-        return content;
-    } catch (error: any) {
-        console.log('Failed to read file:', error.message);
-        return null;
-    }
+export async function readInDocumentDirectory(fileName: string): Promise<string | null> {
+  const fileUri = FileSystem.documentDirectory + fileName;
+  try {
+    const content = await FileSystem.readAsStringAsync(fileUri);
+    // console.log('File content:', content);
+    return content;
+  } catch (error: any) {
+    console.log('Failed to read file:', error.message);
+    return null;
+  }
 };
 
-export const appendIfDoesntExistInDocumentDirectory = async (fileName: string, data : string) => {
-    const prevData = await readInDocumentDirectory(fileName);
-    if (prevData == null) {
-        writeToDocumentDirectory(fileName, data);
-    } else {
-        // If already exists, don't write
-        if (prevData?.includes(data)) {
-            return;
-        }
-        writeToDocumentDirectory(fileName, prevData + '\n' + data);
+export const appendIfDoesntExistInDocumentDirectory = async (fileName: string, data: string) => {
+  const prevData = await readInDocumentDirectory(fileName);
+  if (prevData == null) {
+    writeToDocumentDirectory(fileName, data);
+  } else {
+    // If already exists, don't write
+    if (prevData?.includes(data)) {
+      return;
     }
+    writeToDocumentDirectory(fileName, prevData + '\n' + data);
+  }
 };
 
 export async function doesFileExist(uri: string) {
-    const result = await FileSystem.getInfoAsync(uri);
-    return result.exists && !result.isDirectory;
+  const result = await FileSystem.getInfoAsync(uri);
+  return result.exists && !result.isDirectory;
 }
 
 export async function listDirectoryContents() {
-    try {
-        const contents = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'quizzes');
-        console.log('Directory contents:', contents);
-        return contents;
-    } catch (error) {
-        console.log('Error reading directory:', error);
-    }
+  try {
+    const contents = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory + 'quizzes');
+    console.log('Directory contents:', contents);
+    return contents;
+  } catch (error) {
+    console.log('Error reading directory:', error);
+  }
 }
 
 export function deleteFile(item: string) {
-    FileSystem.deleteAsync(FileSystem.documentDirectory + "/" + item)
+  FileSystem.deleteAsync(FileSystem.documentDirectory + "/" + item)
 }

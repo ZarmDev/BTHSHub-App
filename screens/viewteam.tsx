@@ -1,7 +1,8 @@
 import { styles } from '@/constants/styles';
+import { ModalType, useModal } from '@/providers/ModalProvider';
 import { getTeamAnnouncements } from '@/utils/utils';
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, useColorScheme, View } from 'react-native';
 import { Button, Divider, Menu, Surface, Text } from 'react-native-paper';
 
 
@@ -14,16 +15,25 @@ interface Announcement {
 export default function ViewTeam(props: any) {
     const [menuVisible, setMenuVisible] = useState(false);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [modalVisible, setModalVisible] = useState(false);
+
+    const { showModal } = useModal();
+    const colorScheme = useColorScheme();
 
     async function getAnnoucements() {
         const res = await getTeamAnnouncements(props.selectedTeamName, props.token);
+        console.log(res);
         // console.log(res.data, props.selectedTeamName, props.token);
         try {
             const parsedData = JSON.parse(res.data);
             setAnnouncements(parsedData);
         } catch (error) {
-            console.error("Failed to parse announcements:", error);
+            console.log("Failed to parse announcements:", error);
         }
+    }
+
+    async function getTeamInfo() {
+        showModal(ModalType.TEAMINFO);
     }
 
     useEffect(() => {
@@ -51,7 +61,7 @@ export default function ViewTeam(props: any) {
             <View>
                 <Text style={styles.header}>{props.selectedTeamName}</Text>
                 <Button mode="contained" style={styles.button} onPress={props.parentCallback}>
-                    Explore teams
+                    Explore Teams
                 </Button>
                 <Menu
                     visible={menuVisible}
@@ -72,7 +82,11 @@ export default function ViewTeam(props: any) {
                             title={team}
                         />
                     ))}
+                    
                 </Menu>
+                <Button mode="contained" style={styles.button} onPress={getTeamInfo}>
+                    Get Team Information
+                </Button>
 
                 <Divider style={{ width: '100%', marginVertical: 10 }} />
 

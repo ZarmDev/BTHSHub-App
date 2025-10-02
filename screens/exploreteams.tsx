@@ -15,10 +15,12 @@ export default function ExploreTeams(props: any) {
     }
 
     async function joinTeam(name: string) {
+        console.log('crap')
         const res = await addUserToTeam(name, props.token);
         if (res.data != "Unauthorized") {
             setTeams(JSON.parse(res.data));
         }
+        console.log(res.data)
     }
 
     useEffect(() => {

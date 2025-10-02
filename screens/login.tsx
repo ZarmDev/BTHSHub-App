@@ -7,11 +7,10 @@ import { styles } from '../constants/styles';
 export default function Login(props : any) {
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("");
-    const [email, setEmail] = useState<string>("");
     const [message, setMessage] = useState("");
 
     async function loginUser() {
-        if (username != "" && password != "" && email != "") {
+        if (username != "" && password != "") {
             const res = await login(username, password);
             if (res.ok) {
                 await writeToDocumentDirectory("userdata", `${username}\n${password}`);
@@ -36,12 +35,6 @@ export default function Login(props : any) {
                 label="Password"
                 value={password}
                 onChangeText={text => setPassword(text)}
-            />
-            <TextInput
-                style={styles.textInput}
-                label="Email"
-                value={email}
-                onChangeText={text => setEmail(text)}
             />
             <Button mode="contained-tonal" onPress={loginUser}>
                 Login
