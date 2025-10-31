@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { useColorScheme } from 'react-native';
 import 'react-native-gesture-handler';
 import { BottomNavigation, PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
@@ -40,6 +40,7 @@ export default function App() {
   const [index, setIndex] = useState(defaultTab);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [permissionLevel, setPermissionLevel] = useState("");
   const [token, setToken] = useState("");
   const [routes] = useState([
     { key: 'home', title: 'Home', focusedIcon: 'home', unfocusedIcon: 'home-outline' },
@@ -67,7 +68,7 @@ export default function App() {
     home: () => <Home username={username} token={token}></Home>,
     schedule: () => <Schedule username={username} token={token} />,
     club: () => <Club></Club>,
-    teams: () => <Teams username={username} token={token} isActive={index === 3} />,
+    teams: () => <Teams permissionLevel={permissionLevel} username={username} token={token} isActive={index === 3} />,
     discuss: () => <Discuss></Discuss>,
     calendar: () => <Calendar></Calendar>,
     nhs: () => <NHS></NHS>
@@ -82,19 +83,29 @@ export default function App() {
     }
   }
 
+  // async function attemptRefresh() {
+  //   const timeoutId = setTimeout(() => {
+  //     if (state == STATE.NONE || state == STATE.NOTCONNECTED) {
+  //       setState(STATE.NOTCONNECTED)
+  //     }
+  //   }, 3000)
+  //   const loginAttempt = await login(username, password);
+  //   // console.log(loginAttempt.data, loginAttempt.ok);
+  //   clearTimeout(timeoutId);
+  // }
+
   async function getUserInfo() {
     const data = await readInDocumentDirectory("userdata");
     if (data) {
       const split = data.split('\n')
-      const username = split[0];
-      const password = split[1];
+      const [username,password,permissionLevel] = split;
       const timeoutId = setTimeout(() => {
         if (state == STATE.NONE) {
           setState(STATE.NOTCONNECTED)
         }
       }, 3000)
       const loginAttempt = await login(username, password);
-      console.log(loginAttempt.data, loginAttempt.ok);
+      // console.log(loginAttempt.data);
       clearTimeout(timeoutId);
 
       if (!loginAttempt.ok) {
@@ -103,6 +114,7 @@ export default function App() {
       }
       setUsername(username);
       setPassword(password);
+      setPermissionLevel(permissionLevel);
       setToken(loginAttempt.data);
       setState(STATE.HOME);
     } else {
@@ -111,7 +123,6 @@ export default function App() {
   }
 
   useEffect(() => {
-    console.log("running FS")
     checkFirstStartup()
   }, [])
 
@@ -147,7 +158,7 @@ export default function App() {
       />
       break;
     case STATE.NOTCONNECTED:
-      screenToShow = <NotConnected></NotConnected>
+      screenToShow = <NotConnected refresh={getUserInfo}></NotConnected>
       break;
   }
 
@@ -155,7 +166,15 @@ export default function App() {
     <PaperProvider theme={theme}>
       <SafeAreaProvider>
         <ModalProvider userData={{username, token}}>
-          <View
+            {screenToShow}
+        </ModalProvider>
+      </SafeAreaProvider>
+      <StatusBar style="auto" />
+    </PaperProvider>
+  );
+}
+/*
+<View
             style={{
               flex: 1,
               width: 390, // iPhone width
@@ -167,10 +186,5 @@ export default function App() {
             }}
           >
             {screenToShow}
-          </View>
-        </ModalProvider>
-      </SafeAreaProvider>
-      <StatusBar style="auto" />
-    </PaperProvider>
-  );
-}
+            </View>
+*/

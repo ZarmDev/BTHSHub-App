@@ -3,7 +3,7 @@ import ExploreTeams from '@/screens/exploreteams';
 import ViewTeam from '@/screens/viewteam';
 import { getUserTeams, readInDocumentDirectory, writeToDocumentDirectory } from '@/utils/utils';
 import React, { useEffect, useState } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { View } from 'react-native';
 import { Text } from 'react-native-paper';
 
 enum STATE {
@@ -19,8 +19,6 @@ function Teams(props: any) {
     const [teams, setTeams] = useState<Array<string>>([]);
     const [selectedTeamName, setSelectedTeamName] = useState<string>("No team selected...");
     
-    const colorScheme = useColorScheme();
-
     async function updateTeams() {
         const req = await getUserTeams(props.token);
         if (req.data == "Unauthorized") {

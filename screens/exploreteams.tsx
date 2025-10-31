@@ -15,7 +15,6 @@ export default function ExploreTeams(props: any) {
     }
 
     async function joinTeam(name: string) {
-        console.log('crap')
         const res = await addUserToTeam(name, props.token);
         if (res.data != "Unauthorized") {
             setTeams(JSON.parse(res.data));
@@ -29,7 +28,7 @@ export default function ExploreTeams(props: any) {
 
     return (
         <View>
-            <Button mode="contained-tonal"onPress={props.parentCallback}>Go back</Button>
+            <Button mode="contained-tonal" onPress={props.parentCallback}>See your teams</Button>
             {teams.length == 0 ? <Text>Unable to load teams, something went wrong... (or no teams exist)</Text> : teams.map((name, idx) => (
                 <View key={idx} style={styles.teamItem}>
                     {/* <Image

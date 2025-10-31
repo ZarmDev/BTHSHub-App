@@ -4,7 +4,7 @@ import { readInDocumentDirectory, uploadSchedule, writeToDocumentDirectory } fro
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Card, Chip, Paragraph, SegmentedButtons, Text, Title } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, Chip, Paragraph, Text, Title } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Define TypeScript interfaces for schedule data
@@ -80,28 +80,14 @@ export default function Schedule(props: any) {
         }
     };
 
-    // Generate day selection buttons
-    const renderDaySelector = () => {
-        if (!scheduleData || scheduleData.length === 0) return null;
-        console.log(scheduleData)
-        // Create an array of valid days (days with courses)
-        const validDays = scheduleData
-            // .filter(day => day.courses && day.courses.length > 0)
-            .map(day => ({
-                value: day.dayNumber.toString(),
-                label: `Day ${day.dayNumber}`
-            }));
-            
-        return (
-            // <ScrollView horizontal={true} style={styles.daySelector}>
-            <SegmentedButtons
-                value={selectedDayIndex.toString()}
-                onValueChange={(value) => setSelectedDayIndex(parseInt(value))}
-                buttons={validDays}
-                style={styles.daySelector}
-            />
-            // </ScrollView>
-        );
+    const navigateDay = (direction: 'prev' | 'next') => {
+        setSelectedDayIndex(current => {
+            if (direction === 'prev') {
+                return current > 0 ? current - 1 : current;
+            } else {
+                return current < scheduleData.length - 1 ? current + 1 : current;
+            }
+        });
     };
     
     // Render a single course card
@@ -160,9 +146,13 @@ export default function Schedule(props: any) {
         
         return (
             <ScrollView style={styles.scrollView}>
-                <Title style={styles.dayTitle}>
-                    {selectedDay.dayNumber || `Day ${selectedDay.dayNumber}`}
-                </Title>
+                <View style={styles.daySelector}>
+                    <Button mode="contained-tonal" onPress={() => {navigateDay("prev")}}>{"<"}</Button>
+                    <Title style={styles.dayTitle}>
+                        {`Day ${selectedDay.dayNumber}`}
+                    </Title>
+                    <Button mode="contained-tonal" onPress={() => {navigateDay("next")}}>{">"}</Button>  
+                </View>
                 
                 {selectedDay.courses.map((course, idx) => renderCourseCard(course, idx))}
             </ScrollView>
@@ -172,7 +162,7 @@ export default function Schedule(props: any) {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Title style={styles.title}>My Schedule</Title>
+                <Title style={styles.title}>Schedule</Title>
                 <Button 
                     mode="outlined" 
                     icon="upload" 
@@ -192,7 +182,6 @@ export default function Schedule(props: any) {
             
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
             
-            {renderDaySelector()}
             {renderDaySchedule()}
         </SafeAreaView>
     );
@@ -203,8 +192,7 @@ export default function Schedule(props: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 2,
-        backgroundColor: '#f5f5f5',
+        padding: 2
     },
     header: {
         flexDirection: 'row',
@@ -215,9 +203,14 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
+        padding: 6
     },
     daySelector: {
-        marginBottom: 16
+        display: "flex",
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 16,
     },
     dayTitle: {
         marginBottom: 12,
